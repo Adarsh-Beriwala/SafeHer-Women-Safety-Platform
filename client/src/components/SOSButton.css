@@ -1,0 +1,93 @@
+.sos-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.sos-btn {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--gradient-sos);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.2);
+}
+
+.sos-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.5), 0 0 80px rgba(239, 68, 68, 0.3);
+}
+
+.sos-btn:active {
+  transform: scale(0.95);
+}
+
+.sos-text {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  z-index: 2;
+}
+
+.sos-subtext {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  margin-top: 4px;
+  z-index: 2;
+  font-weight: 500;
+}
+
+/* Ripple Animation */
+.sos-ripple {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  animation: ripple 2s ease-out infinite;
+}
+
+.sos-ripple.delay {
+  animation-delay: 1s;
+}
+
+.sos-ripple-active {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(239, 68, 68, 0.6);
+  animation: ripple 1.5s ease-out infinite;
+}
+
+/* Active State */
+.sos-btn.active {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+.sos-btn.active .sos-text {
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+}
+
+@media (max-width: 480px) {
+  .sos-btn {
+    width: 150px;
+    height: 150px;
+  }
+
+  .sos-text {
+    font-size: 2rem;
+  }
+}

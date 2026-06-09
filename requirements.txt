@@ -1,0 +1,25 @@
+## ============================================
+## SafeHer - Women Safety Platform
+## Python Dependencies (ML Backend - Flask)
+## ============================================
+
+## --- Web Framework ---
+flask==3.1.1
+flask-cors==5.0.1
+
+## --- Machine Learning ---
+xgboost==2.1.4
+scikit-learn==1.6.1
+
+## --- Data Processing ---
+pandas==2.2.3
+numpy==1.26.4
+
+## --- Model Serialization ---
+joblib==1.4.2
+
+## --- Production Server ---
+gunicorn==23.0.0
+
+## --- Environment Variables ---
+python-dotenv==1.1.0

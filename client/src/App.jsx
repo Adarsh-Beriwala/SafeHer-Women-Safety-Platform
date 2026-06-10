@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import VolunteerDashboard from './pages/VolunteerDashboard';
 import Track from './pages/Track';
 import EvidenceHistory from './pages/EvidenceHistory';
 import './App.css';
@@ -35,6 +36,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/volunteer" element={<ProtectedRoute><VolunteerDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/evidence" element={<ProtectedRoute><EvidenceHistory /></ProtectedRoute>} />
 

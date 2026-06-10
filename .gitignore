@@ -37,6 +37,11 @@ firebase-debug.log
 # PDFs
 *.pdf
 
+# Interview Prep
+Interview_Prep.md
+FAANG_Interview_Questions.md
+SafeHer_Master_Guide.md
+
 # Logs
 *.log
 npm-debug.log*

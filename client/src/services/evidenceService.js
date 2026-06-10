@@ -31,38 +31,81 @@ export const captureEvidence = async (videoElement) => {
 export const uploadEvidence = async (userId, imageBlob) => {
   const timestamp = Date.now();
   const filename = `evidence_${timestamp}.jpg`;
-  const fileRef = storageRef(storage, `evidence/${userId}/${filename}`);
-
-  await uploadBytes(fileRef, imageBlob, {
-    contentType: 'image/jpeg',
-    customMetadata: {
-      capturedAt: new Date().toISOString(),
-      userId: userId,
-    },
+  
+  // Convert blob to base64
+  const base64data = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(imageBlob);
+    reader.onloadend = () => resolve(reader.result);
   });
 
-  const downloadURL = await getDownloadURL(fileRef);
-
-  // Save metadata to Firestore
   await addDoc(collection(db, 'evidence'), {
     userId,
-    imageUrl: downloadURL,
+    imageUrl: base64data,
     filename,
     capturedAt: new Date().toISOString(),
     timestamp,
+    type: 'image'
   });
 
-  return downloadURL;
+  return base64data;
+};
+
+export const fetchUserEvidence = async (userId) => {
+  try {
+    const { query, where, getDocs, limit } = await import('firebase/firestore');
+    const evidenceRef = collection(db, 'evidence');
+    // Remove orderBy to avoid requiring a manual Firestore composite index
+    const q = query(evidenceRef, where("userId", "==", userId), limit(30));
+    const querySnapshot = await getDocs(q);
+    
+    let evidenceList = [];
+    querySnapshot.forEach((doc) => {
+      evidenceList.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Sort locally in JS
+    evidenceList.sort((a, b) => b.timestamp - a.timestamp);
+    
+    return evidenceList;
+  } catch (error) {
+    console.error("Error fetching evidence:", error);
+    return [];
+  }
+};
+
+export const uploadAudio = async (userId, audioBlob) => {
+  const timestamp = Date.now();
+  const filename = `audio_${timestamp}.webm`;
+  
+  // Convert blob to base64
+  const base64data = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = () => resolve(reader.result);
+  });
+
+  await addDoc(collection(db, 'evidence'), {
+    userId,
+    audioUrl: base64data,
+    filename,
+    capturedAt: new Date().toISOString(),
+    timestamp,
+    type: 'audio'
+  });
+
+  return base64data;
 };
 
 export const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: 640, height: 480 },
+      audio: true // Enabled audio for recording
     });
     return stream;
   } catch (error) {
-    console.error('Camera access denied:', error);
+    console.error('Camera/Mic access denied:', error);
     throw error;
   }
 };

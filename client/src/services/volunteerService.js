@@ -21,6 +21,14 @@ export const goOffDuty = async (userId) => {
   });
 };
 
+export const toggleVolunteerDuty = async (userId, userName, location, newStatus) => {
+  if (newStatus) {
+    await goOnDuty(userId, location, userName);
+  } else {
+    await goOffDuty(userId);
+  }
+};
+
 export const updateVolunteerLocation = async (userId, location) => {
   await updateDoc(doc(db, 'volunteers', userId), {
     lat: location.lat,

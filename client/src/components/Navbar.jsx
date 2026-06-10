@@ -40,8 +40,8 @@ const Navbar = () => {
           {currentUser ? (
             <>
               <Link
-                to={userProfile?.role === 'volunteer' ? '/volunteer-dashboard' : '/dashboard'}
-                className={`nav-link ${isActive('/dashboard') || isActive('/volunteer-dashboard') ? 'active' : ''}`}
+                to={userProfile?.role === 'volunteer' ? '/volunteer' : '/dashboard'}
+                className={`nav-link ${isActive('/dashboard') || isActive('/volunteer') ? 'active' : ''}`}
                 onClick={closeMobile}
               >
                 <FiGrid /> Dashboard

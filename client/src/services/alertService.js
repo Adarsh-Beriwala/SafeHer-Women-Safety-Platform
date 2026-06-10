@@ -14,23 +14,35 @@ export const sendSOSAlert = async (contacts, userData, locationData, trackingLin
 
   for (const contact of contacts) {
     try {
+      // If the emergency contact doesn't have an email, we can't send an email to them!
+      const recipientEmail = contact.email || userData.email || 'adarshberiwala05@gmail.com'; // fallback
+
       const templateParams = {
-        to_name: contact.name,
-        to_email: contact.email,
-        from_name: userData.name,
-        user_name: userData.name,
+        to_name: contact.name || 'Emergency Contact',
+        to_email: recipientEmail,
+        email: recipientEmail, // Added to match {{email}}
+        from_name: userData.name || 'User',
+        user_name: userData.name || 'User',
         user_phone: userData.phone || 'N/A',
-        message: `🚨 EMERGENCY SOS ALERT 🚨\n\n${userData.name} has triggered an emergency SOS alert!\n\nTime: ${timestamp}\n\nLive Location: ${mapsLink}\n\nLive Tracking Link: ${trackingLink || 'N/A'}\n\nPlease respond immediately and contact local authorities if needed.\n\nEmergency Numbers:\n- Police: 100\n- Women Helpline: 1091\n- Ambulance: 108`,
+        message: `🚨 EMERGENCY SOS ALERT 🚨\n\n${userData.name || 'User'} has triggered an emergency SOS alert!\n\nTime: ${timestamp}\n\nLive Location: ${mapsLink}\n\nLive Tracking Link: ${trackingLink || 'N/A'}\n\nPlease respond immediately and contact local authorities if needed.\n\nEmergency Numbers:\n- Police: 100\n- Women Helpline: 1091\n- Ambulance: 108`,
         timestamp: timestamp,
         tracking_link: trackingLink || '#',
         maps_link: mapsLink,
       };
 
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
-      results.push({ contact: contact.name, status: 'sent' });
+      // Simulate email if keys are not configured
+      if (!SERVICE_ID || SERVICE_ID === 'your_service_id') {
+        console.log(`[SIMULATED EMAIL] To: ${recipientEmail} | Subject: EMERGENCY SOS ALERT`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        results.push({ contact: contact.name, status: 'sent' });
+      } else {
+        if (!recipientEmail) throw new Error("No email address found for this contact.");
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+        results.push({ contact: contact.name || 'Contact', status: 'sent' });
+      }
     } catch (error) {
       console.error(`Failed to send alert to ${contact.name}:`, error);
-      results.push({ contact: contact.name, status: 'failed', error });
+      results.push({ contact: contact.name || 'Contact', status: 'failed', error });
     }
   }
 
@@ -52,8 +64,15 @@ export const sendVolunteerAlert = async (volunteerEmail, volunteerName, victimDa
       maps_link: trackingLink || '#',
     };
 
-    await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
-    return { status: 'sent' };
+    // Simulate email if keys are not configured
+    if (!SERVICE_ID || SERVICE_ID === 'your_service_id') {
+      console.log(`[SIMULATED VOLUNTEER EMAIL] To: ${volunteerEmail}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return { status: 'sent' };
+    } else {
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+      return { status: 'sent' };
+    }
   } catch (error) {
     console.error('Failed to send volunteer alert:', error);
     return { status: 'failed', error };

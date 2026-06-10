@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { FiCamera, FiCheck, FiX } from 'react-icons/fi';
 import './EvidenceCapture.css';
 
-const EvidenceCapture = ({ stream, onCapture, lastCaptureUrl }) => {
+const EvidenceCapture = ({ stream, onCapture, onAudioCapture, lastCaptureUrl }) => {
   const videoRef = useRef(null);
   const [hasStream, setHasStream] = useState(false);
 
@@ -17,6 +17,53 @@ const EvidenceCapture = ({ stream, onCapture, lastCaptureUrl }) => {
       }
     };
   }, [stream]);
+
+  // Auto capture after stream is established
+  useEffect(() => {
+    if (hasStream) {
+      let photoCount = 0;
+      
+      // Take 10 photos (1 per second)
+      const photoInterval = setInterval(() => {
+        if (photoCount < 10) {
+          handleCapture();
+          photoCount++;
+        } else {
+          clearInterval(photoInterval);
+        }
+      }, 1000);
+
+      // Record 10 seconds of audio
+      if (stream) {
+        try {
+          const mediaRecorder = new MediaRecorder(stream);
+          const audioChunks = [];
+          
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+          
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            if (onAudioCapture) {
+               onAudioCapture(audioBlob);
+            }
+          };
+          
+          mediaRecorder.start();
+          setTimeout(() => {
+            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+          }, 10000); // 10 seconds
+        } catch (err) {
+          console.error("Audio recording failed:", err);
+        }
+      }
+
+      return () => {
+        clearInterval(photoInterval);
+      };
+    }
+  }, [hasStream]);
 
   const handleCapture = async () => {
     if (!videoRef.current || !hasStream) return;
@@ -58,9 +105,12 @@ const EvidenceCapture = ({ stream, onCapture, lastCaptureUrl }) => {
       )}
 
       {lastCaptureUrl && (
-        <div className="evidence-last-capture">
-          <FiCheck className="evidence-check" />
-          <span>Evidence captured & uploaded</span>
+        <div className="evidence-last-capture" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+          <img src={lastCaptureUrl} alt="Captured Evidence" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', border: '2px solid #10b981' }} />
+          <div>
+            <FiCheck className="evidence-check" style={{ color: '#10b981', marginRight: '5px' }} />
+            <span style={{ color: '#a89cc4', fontSize: '14px' }}>Evidence captured & saved</span>
+          </div>
         </div>
       )}
     </div>

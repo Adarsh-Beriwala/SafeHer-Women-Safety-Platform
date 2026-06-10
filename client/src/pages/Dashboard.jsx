@@ -9,6 +9,7 @@ import SOSButton from '../components/SOSButton';
 import VoiceListener from '../components/VoiceListener';
 import EvidenceCapture from '../components/EvidenceCapture';
 import LiveMap from '../components/LiveMap';
+import FakeCall from '../components/FakeCall';
 import {
   FiMapPin, FiCamera, FiMic, FiShield, FiUser,
   FiArrowRight, FiPhone, FiCpu, FiMessageCircle,
@@ -26,14 +27,21 @@ const Dashboard = () => {
   const [cameraStream, setCameraStream] = useState(null);
   const [lastCaptureUrl, setLastCaptureUrl] = useState(null);
   const [sosLog, setSosLog] = useState([]);
+  const [evidenceVault, setEvidenceVault] = useState([]);
   const videoRef = useRef(null);
 
-  // Get initial location
+  // Get initial location and evidence
   useEffect(() => {
     getCurrentPosition()
       .then(setCurrentLocation)
       .catch(() => console.log('Location not available yet'));
-  }, []);
+
+    if (currentUser?.uid) {
+      import('../services/evidenceService').then(({ fetchUserEvidence }) => {
+        fetchUserEvidence(currentUser.uid).then(setEvidenceVault);
+      });
+    }
+  }, [currentUser]);
 
   const addLog = (message) => {
     setSosLog((prev) => [{ message, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
@@ -70,28 +78,11 @@ const Dashboard = () => {
       }).catch(console.error);
       addLog('📡 Live tracking started');
 
-      // 4. Capture evidence
+      // 4. Start Camera for Evidence
       try {
         const stream = await startCamera();
         setCameraStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          const canvas = document.createElement('canvas');
-          canvas.width = videoRef.current.videoWidth || 640;
-          canvas.height = videoRef.current.videoHeight || 480;
-          canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
-          const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-          if (blob) {
-            const url = await uploadEvidence(currentUser.uid, blob);
-            setLastCaptureUrl(url);
-            addLog('📸 Evidence captured & uploaded');
-            toast.success('📸 Evidence captured');
-          }
-        }
+        addLog('📸 Camera started, auto-capturing...');
       } catch (camErr) {
         console.error('Camera error:', camErr);
         addLog('⚠️ Camera not available');
@@ -151,9 +142,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* Hidden video element for evidence capture */}
-      <video ref={videoRef} style={{ display: 'none' }} muted playsInline />
-
       <div className="container">
         {/* Header */}
         <div className="dashboard-header animate-fadeInUp">
@@ -208,7 +196,30 @@ const Dashboard = () => {
           {/* Evidence Capture */}
           <div className="dashboard-card glass-card animate-fadeInUp delay-3">
             <div className="card-title"><FiCamera /> Evidence Capture</div>
-            <EvidenceCapture stream={cameraStream} lastCaptureUrl={lastCaptureUrl} />
+            <EvidenceCapture 
+              stream={cameraStream} 
+              lastCaptureUrl={lastCaptureUrl} 
+              onCapture={async (blob) => {
+                try {
+                  const url = await uploadEvidence(currentUser.uid, blob);
+                  setLastCaptureUrl(url);
+                  addLog('📸 Evidence photo captured & uploaded');
+                  toast.success('📸 Evidence photo captured');
+                } catch (err) {
+                  console.error('Evidence photo upload failed:', err);
+                }
+              }}
+              onAudioCapture={async (blob) => {
+                try {
+                  const { uploadAudio } = await import('../services/evidenceService');
+                  await uploadAudio(currentUser.uid, blob);
+                  addLog('🎤 10s Audio evidence uploaded');
+                  toast.success('🎤 Audio evidence saved');
+                } catch (err) {
+                  console.error('Audio upload failed:', err);
+                }
+              }}
+            />
           </div>
 
           {/* SOS Activity Log */}
@@ -228,13 +239,13 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Coming Soon Cards */}
-          <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-5">
+          {/* Fake Call Feature */}
+          <div className="dashboard-card glass-card animate-fadeInUp delay-5">
             <div className="card-title"><FiPhone /> Fake Call</div>
-            <div className="coming-soon-content">
-              <p>Simulate realistic incoming calls</p>
-              <span className="badge badge-warning">Coming Day 3</span>
-            </div>
+            <FakeCall 
+              defaultCallerName={userProfile?.fakeCallSettings?.callerName || 'Mom'} 
+              delaySeconds={userProfile?.fakeCallSettings?.delaySeconds || 3} 
+            />
           </div>
 
           <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-5">
@@ -261,11 +272,41 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-6">
-            <div className="card-title"><FiClock /> Safety Check-in</div>
-            <div className="coming-soon-content">
-              <p>Periodic auto-SOS check-in timer</p>
-              <span className="badge badge-warning">Coming Day 5</span>
+          {/* Evidence Vault */}
+          <div className="dashboard-card glass-card animate-fadeInUp delay-6" style={{ gridColumn: '1 / -1' }}>
+            <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span><FiCamera /> Evidence Vault</span>
+              <button className="btn btn-ghost btn-sm" onClick={async () => {
+                const { fetchUserEvidence } = await import('../services/evidenceService');
+                const data = await fetchUserEvidence(currentUser.uid);
+                setEvidenceVault(data);
+              }}>
+                Refresh
+              </button>
+            </div>
+            <div className="evidence-vault-grid" style={{ display: 'flex', gap: '15px', overflowX: 'auto', padding: '10px 0' }}>
+              {evidenceVault.length === 0 ? (
+                <p className="log-empty">No evidence saved yet. Trigger SOS to capture.</p>
+              ) : (
+                evidenceVault.map((item) => (
+                  <div key={item.id} className="vault-item" style={{ flexShrink: 0, position: 'relative' }}>
+                    {item.type === 'image' ? (
+                      <img src={item.imageUrl} alt="Evidence" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #2d1054' }} />
+                    ) : (
+                      <div style={{ width: '220px', height: '120px', background: '#1a1128', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid #2d1054' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
+                          <FiMic size={18} color="#a89cc4" />
+                          <span style={{ fontSize: '12px', color: '#a89cc4' }}>10s Audio Recording</span>
+                        </div>
+                        <audio controls src={item.audioUrl} style={{ width: '200px', height: '35px' }} />
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: 0, width: '100%', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', textAlign: 'center', padding: '2px 0', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}>
+                      {new Date(item.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

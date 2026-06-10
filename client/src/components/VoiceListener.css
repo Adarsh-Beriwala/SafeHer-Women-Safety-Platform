@@ -1,0 +1,89 @@
+.voice-listener {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.voice-btn {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-base);
+  flex-shrink: 0;
+}
+
+.voice-btn-inner {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  z-index: 2;
+  display: flex;
+  transition: var(--transition-base);
+}
+
+.voice-btn:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-glass-hover);
+}
+
+.voice-btn:hover .voice-btn-inner {
+  color: var(--primary-light);
+}
+
+.voice-btn.active {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.voice-btn.active .voice-btn-inner {
+  color: var(--success-light);
+}
+
+/* Pulsing rings */
+.voice-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid var(--success);
+  opacity: 0;
+  animation: ripple 2.5s ease-out infinite;
+}
+
+.ring-2 { animation-delay: 0.8s; }
+.ring-3 { animation-delay: 1.6s; }
+
+.voice-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voice-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.voice-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.voice-not-supported {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

@@ -34,7 +34,7 @@
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.25);
   border-radius: var(--radius-md);
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   color: var(--warning-light);
 }
 
@@ -43,115 +43,141 @@
   font-size: 0.9rem;
 }
 
-/* SOS Placeholder */
+/* SOS Section */
 .dashboard-sos-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 48px;
-  gap: 16px;
+  margin-bottom: 24px;
+  gap: 20px;
 }
 
-.sos-placeholder {
-  text-align: center;
-}
-
-.sos-placeholder-circle {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-  border: 2px solid rgba(239, 68, 68, 0.2);
+/* Tracking Link */
+.tracking-link-box {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  transition: var(--transition-base);
-}
-
-.sos-placeholder-circle:hover {
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.15);
-}
-
-.sos-placeholder-circle span {
-  font-family: var(--font-heading);
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: rgba(239, 68, 68, 0.4);
-  letter-spacing: 4px;
-}
-
-.sos-placeholder p {
-  color: var(--text-muted);
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
 }
 
-/* Section Title */
-.dashboard-section-title {
-  font-size: 1.4rem;
-  margin-bottom: 20px;
-  color: var(--text-white);
+.tracking-link-box a {
+  color: var(--info);
+  font-weight: 600;
+  word-break: break-all;
 }
 
-/* Features Grid */
-.dashboard-features-grid {
+.tracking-link-box a:hover {
+  text-decoration: underline;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 }
 
-.dashboard-feature-card {
-  padding: 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  flex-wrap: wrap;
+.dashboard-card {
+  padding: 24px;
+  min-height: 280px;
 }
 
-.dashboard-feature-card:hover {
+.dashboard-card:hover {
   transform: none;
 }
 
-.feature-card-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-md);
+.dashboard-card.large {
+  grid-column: 1 / -1;
+  min-height: 400px;
+}
+
+.card-title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.feature-card-content {
-  flex: 1;
-  min-width: 120px;
-}
-
-.feature-card-content h3 {
-  font-size: 0.95rem;
+  gap: 8px;
+  font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 4px;
   color: var(--text-white);
+  margin-bottom: 16px;
+  font-family: var(--font-heading);
 }
 
-.feature-card-content p {
-  font-size: 0.8rem;
+.card-title svg {
+  color: var(--primary-light);
+}
+
+/* SOS Activity Log */
+.sos-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.sos-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sos-log::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.log-empty {
   color: var(--text-muted);
-  line-height: 1.4;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 40px 16px;
 }
 
-.feature-status {
-  font-size: 0.65rem !important;
-  align-self: flex-start;
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
 }
 
-@media (max-width: 1024px) {
-  .dashboard-features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.log-time {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-family: monospace;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.log-msg {
+  color: var(--text-secondary);
+}
+
+/* Coming Soon Cards */
+.dashboard-card.coming-soon {
+  min-height: auto;
+  padding: 20px;
+  opacity: 0.7;
+}
+
+.coming-soon-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.coming-soon-content p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 @media (max-width: 768px) {
@@ -161,8 +187,12 @@
     gap: 12px;
   }
 
-  .dashboard-features-grid {
+  .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-card.large {
+    min-height: 300px;
   }
 
   .dashboard-alert {

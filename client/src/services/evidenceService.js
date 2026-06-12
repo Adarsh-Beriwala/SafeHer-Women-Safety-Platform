@@ -29,26 +29,45 @@ export const captureEvidence = async (videoElement) => {
 };
 
 export const uploadEvidence = async (userId, imageBlob) => {
-  const timestamp = Date.now();
-  const filename = `evidence_${timestamp}.jpg`;
-  
-  // Convert blob to base64
-  const base64data = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(imageBlob);
-    reader.onloadend = () => resolve(reader.result);
-  });
+  try {
+    const timestamp = Date.now();
+    const filename = `evidence_${timestamp}.jpg`;
+    
+    // Fallback base64 conversion
+    const getBase64 = (blob) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
 
-  await addDoc(collection(db, 'evidence'), {
-    userId,
-    imageUrl: base64data,
-    filename,
-    capturedAt: new Date().toISOString(),
-    timestamp,
-    type: 'image'
-  });
-
-  return base64data;
+    let downloadUrl;
+    try {
+      const imageRef = storageRef(storage, `evidence/${userId}/${filename}`);
+      // Timeout after 5 seconds to prevent hanging if Storage is not enabled
+      const uploadTask = uploadBytes(imageRef, imageBlob);
+      const timeoutTask = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage Upload Timeout')), 5000));
+      await Promise.race([uploadTask, timeoutTask]);
+      downloadUrl = await getDownloadURL(imageRef);
+    } catch (storageErr) {
+      console.warn("Storage upload failed/timed out, falling back to base64 Firestore:", storageErr);
+      downloadUrl = await getBase64(imageBlob);
+    }
+    
+    // Save metadata to Firestore
+    await addDoc(collection(db, 'evidence'), {
+      userId,
+      imageUrl: downloadUrl,
+      filename,
+      capturedAt: new Date().toISOString(),
+      timestamp,
+      type: 'image'
+    });
+    
+    return downloadUrl;
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    throw error;
+  }
 };
 
 export const fetchUserEvidence = async (userId) => {
@@ -75,38 +94,64 @@ export const fetchUserEvidence = async (userId) => {
 };
 
 export const uploadAudio = async (userId, audioBlob) => {
-  const timestamp = Date.now();
-  const filename = `audio_${timestamp}.webm`;
-  
-  // Convert blob to base64
-  const base64data = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
-    reader.onloadend = () => resolve(reader.result);
-  });
+  try {
+    const timestamp = Date.now();
+    const filename = `audio_${timestamp}.webm`;
+    
+    const getBase64 = (blob) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
 
-  await addDoc(collection(db, 'evidence'), {
-    userId,
-    audioUrl: base64data,
-    filename,
-    capturedAt: new Date().toISOString(),
-    timestamp,
-    type: 'audio'
-  });
-
-  return base64data;
+    let downloadUrl;
+    try {
+      // Upload to Firebase Storage
+      const audioReference = storageRef(storage, `evidence/${userId}/${filename}`);
+      const uploadTask = uploadBytes(audioReference, audioBlob);
+      const timeoutTask = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage Upload Timeout')), 5000));
+      await Promise.race([uploadTask, timeoutTask]);
+      downloadUrl = await getDownloadURL(audioReference);
+    } catch (storageErr) {
+      console.warn("Storage audio upload failed/timed out, falling back to base64 Firestore:", storageErr);
+      // Limit base64 audio to prevent 1MB Firestore crash (take only first 500KB of Blob if needed)
+      const safeBlob = audioBlob.size > 700000 ? audioBlob.slice(0, 700000, audioBlob.type) : audioBlob;
+      downloadUrl = await getBase64(safeBlob);
+    }
+    
+    // Save metadata to Firestore
+    await addDoc(collection(db, 'evidence'), {
+      userId,
+      audioUrl: downloadUrl,
+      filename,
+      capturedAt: new Date().toISOString(),
+      timestamp,
+      type: 'audio'
+    });
+    
+    return downloadUrl;
+  } catch (error) {
+    console.error("Audio upload failed:", error);
+    throw error;
+  }
 };
 
 export const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: 640, height: 480 },
-      audio: true // Enabled audio for recording
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: true
     });
     return stream;
   } catch (error) {
-    console.error('Camera/Mic access denied:', error);
-    throw error;
+    console.warn('Ideal camera constraints failed, trying basic fallback:', error);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      return stream;
+    } catch (fallbackError) {
+      console.error('Camera/Mic access denied or unavailable:', fallbackError);
+      throw fallbackError;
+    }
   }
 };
 

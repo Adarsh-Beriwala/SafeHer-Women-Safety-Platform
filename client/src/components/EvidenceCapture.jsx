@@ -21,64 +21,92 @@ const EvidenceCapture = ({ stream, onCapture, onAudioCapture, lastCaptureUrl }) 
   // Auto capture after stream is established
   useEffect(() => {
     if (hasStream) {
-      let photoCount = 0;
+      // Auto-capture up to 10 photos (1 every 2 seconds)
+      let captureCount = 0;
+      let captureInterval;
       
-      // Take 10 photos (1 per second)
-      const photoInterval = setInterval(() => {
-        if (photoCount < 10) {
+      const startCapturing = () => {
+        // Take immediate first shot
+        handleCapture();
+        captureCount++;
+        
+        captureInterval = setInterval(() => {
+          if (captureCount >= 10) {
+            clearInterval(captureInterval);
+            return;
+          }
           handleCapture();
-          photoCount++;
-        } else {
-          clearInterval(photoInterval);
-        }
-      }, 1000);
+          captureCount++;
+        }, 2000);
+      };
 
-      // Record 10 seconds of audio
+      // Delay first capture by 1s to let camera sensor adjust to light
+      const warmupTimeout = setTimeout(startCapturing, 1000);
+
+      // Record 10 seconds of audio reliably
       if (stream) {
         try {
           const mediaRecorder = new MediaRecorder(stream);
           const audioChunks = [];
           
           mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunks.push(e.data);
-          };
-          
-          mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-            if (onAudioCapture) {
-               onAudioCapture(audioBlob);
+            if (e.data && e.data.size > 0) {
+              audioChunks.push(e.data);
             }
           };
           
-          mediaRecorder.start();
+          mediaRecorder.onstop = () => {
+            if (audioChunks.length > 0) {
+              const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+              if (onAudioCapture) {
+                 onAudioCapture(audioBlob);
+              }
+            } else {
+              console.warn("Audio recording stopped but no chunks were captured.");
+            }
+          };
+          
+          // Emit chunks every 1000ms
+          mediaRecorder.start(1000);
+          
           setTimeout(() => {
-            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
-          }, 10000); // 10 seconds
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.requestData();
+              setTimeout(() => mediaRecorder.stop(), 100);
+            }
+          }, 10000); // 10 seconds limit
         } catch (err) {
           console.error("Audio recording failed:", err);
         }
       }
 
       return () => {
-        clearInterval(photoInterval);
+        clearTimeout(warmupTimeout);
+        if (captureInterval) clearInterval(captureInterval);
       };
     }
   }, [hasStream]);
 
   const handleCapture = async () => {
-    if (!videoRef.current || !hasStream) return;
+    try {
+      if (!videoRef.current || !hasStream) return;
+      
+      if (videoRef.current.readyState < 2) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth || 640;
-    canvas.height = videoRef.current.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth || 640;
+      canvas.height = videoRef.current.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (blob && onCapture) {
-        onCapture(blob);
-      }
-    }, 'image/jpeg', 0.85);
+      canvas.toBlob((blob) => {
+        if (blob && onCapture) {
+          onCapture(blob);
+        }
+      }, 'image/jpeg', 0.85);
+    } catch (err) {
+      console.error("Canvas drawImage Error:", err);
+    }
   };
 
   return (

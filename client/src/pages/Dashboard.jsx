@@ -10,6 +10,7 @@ import VoiceListener from '../components/VoiceListener';
 import EvidenceCapture from '../components/EvidenceCapture';
 import LiveMap from '../components/LiveMap';
 import FakeCall from '../components/FakeCall';
+import PeriodicCheckIn from '../components/PeriodicCheckIn';
 import {
   FiMapPin, FiCamera, FiMic, FiShield, FiUser,
   FiArrowRight, FiPhone, FiCpu, FiMessageCircle,
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [lastCaptureUrl, setLastCaptureUrl] = useState(null);
   const [sosLog, setSosLog] = useState([]);
   const [evidenceVault, setEvidenceVault] = useState([]);
+  const [dispatchedVolunteers, setDispatchedVolunteers] = useState([]);
   const videoRef = useRef(null);
 
   // Get initial location and evidence
@@ -72,8 +74,8 @@ const Dashboard = () => {
       setTrackingLink(link);
       addLog('🔗 Tracking link generated');
 
-      // 3. Start live tracking
-      startTracking(newSessionId, (loc) => {
+      // 3. Start live tracking (push immediate location)
+      startTracking(newSessionId, location, (loc) => {
         setCurrentLocation(loc);
       }).catch(console.error);
       addLog('📡 Live tracking started');
@@ -109,8 +111,11 @@ const Dashboard = () => {
         alertNearbyVolunteers(location, { name: userProfile.name }, link)
           .then((results) => {
             if (results.length > 0) {
+              setDispatchedVolunteers(results);
               addLog(`🤝 ${results.length} volunteer(s) alerted`);
               toast.success(`🤝 ${results.length} volunteer(s) nearby alerted`);
+            } else {
+              setDispatchedVolunteers([]);
             }
           })
           .catch(console.error);
@@ -137,6 +142,7 @@ const Dashboard = () => {
     setTrackingLink('');
     setLastCaptureUrl(null);
     setSosLog([]);
+    setDispatchedVolunteers([]);
     toast.success("✅ You're marked safe!");
   }, [sessionId, cameraStream]);
 
@@ -171,7 +177,7 @@ const Dashboard = () => {
         <div className="dashboard-sos-section animate-fadeInUp delay-1">
           <SOSButton onTrigger={triggerSOS} onDeactivate={deactivateSOS} isActive={sosActive} />
           <VoiceListener
-            triggerWord={userProfile?.safetyWord || 'help me'}
+            triggerWord={'help me'}
             onTrigger={triggerSOS}
           />
         </div>
@@ -207,6 +213,9 @@ const Dashboard = () => {
                   toast.success('📸 Evidence photo captured');
                 } catch (err) {
                   console.error('Evidence photo upload failed:', err);
+                  toast.error(`Photo upload error: ${err.message}`);
+                  alert(`Photo Upload Failed: ${err.message}`);
+                  addLog('⚠️ Photo upload failed');
                 }
               }}
               onAudioCapture={async (blob) => {
@@ -217,6 +226,9 @@ const Dashboard = () => {
                   toast.success('🎤 Audio evidence saved');
                 } catch (err) {
                   console.error('Audio upload failed:', err);
+                  toast.error(`Audio upload error: ${err.message}`);
+                  alert(`Audio Upload Failed: ${err.message}`);
+                  addLog('⚠️ Audio upload failed');
                 }
               }}
             />
@@ -248,27 +260,40 @@ const Dashboard = () => {
             />
           </div>
 
-          <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-5">
+          {/* Periodic Safety Check */}
+          <div className="dashboard-card glass-card animate-fadeInUp delay-5">
+            <PeriodicCheckIn onSOS={triggerSOS} />
+          </div>
+
+          <div className="dashboard-card glass-card animate-fadeInUp delay-5">
             <div className="card-title"><FiUsers /> Volunteer Network</div>
-            <div className="coming-soon-content">
-              <p>Nearby volunteer dispatch system</p>
-              <span className="badge badge-warning">Coming Day 3</span>
-            </div>
-          </div>
-
-          <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-6">
-            <div className="card-title"><FiCpu /> AI Safety Score</div>
-            <div className="coming-soon-content">
-              <p>ML-powered area safety ratings</p>
-              <span className="badge badge-warning">Coming Day 4</span>
-            </div>
-          </div>
-
-          <div className="dashboard-card glass-card coming-soon animate-fadeInUp delay-6">
-            <div className="card-title"><FiMessageCircle /> AI Chatbot</div>
-            <div className="coming-soon-content">
-              <p>Gemini-powered safety advice</p>
-              <span className="badge badge-warning">Coming Day 4</span>
+            <div className="volunteer-network-content" style={{ padding: '10px 0' }}>
+              {sosActive ? (
+                dispatchedVolunteers.length > 0 ? (
+                  <div>
+                    <p style={{ color: '#00e676', marginBottom: '10px', fontSize: '14px' }}>
+                      ✓ Alerted {dispatchedVolunteers.length} nearby volunteer(s)
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {dispatchedVolunteers.map((v, i) => (
+                        <li key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '5px', marginBottom: '5px', fontSize: '13px' }}>
+                          <span style={{ fontWeight: 'bold' }}>{v.volunteer}</span> • {v.distance} km away
+                          <span style={{ float: 'right', color: v.status === 'sent' ? '#00e676' : '#ff4d4d' }}>
+                            {v.status === 'sent' ? 'Dispatched' : 'Failed'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '14px', color: '#a89cc4' }}>Scanning 5km radius for active volunteers...</p>
+                )
+              ) : (
+                <div style={{ textAlign: 'center', padding: '10px 0', color: '#a89cc4' }}>
+                  <p style={{ fontSize: '14px' }}>Haversine dispatch system is active.</p>
+                  <p style={{ fontSize: '12px', marginTop: '5px' }}>Volunteers within 5km will be alerted when SOS is triggered.</p>
+                </div>
+              )}
             </div>
           </div>
 

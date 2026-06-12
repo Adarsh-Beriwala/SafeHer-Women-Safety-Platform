@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard';
 import VolunteerDashboard from './pages/VolunteerDashboard';
 import Track from './pages/Track';
 import EvidenceHistory from './pages/EvidenceHistory';
+import SafeBot from './components/SafeBot';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -25,6 +27,7 @@ function App() {
 
   return (
     <div className="app">
+      <Toaster position="top-right" />
       <Navbar />
       <main className="main-content">
         <Routes>
@@ -44,6 +47,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <SafeBot />
     </div>
   );
 }

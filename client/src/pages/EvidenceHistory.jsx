@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
 import { formatTimestamp } from '../utils/helpers';
@@ -18,14 +18,17 @@ const EvidenceHistory = () => {
       try {
         const q = query(
           collection(db, 'evidence'),
-          where('userId', '==', currentUser.uid),
-          orderBy('timestamp', 'desc')
+          where('userId', '==', currentUser.uid)
         );
         const snapshot = await getDocs(q);
         const items = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+        
+        // Sort locally to avoid Firebase Composite Index requirement
+        items.sort((a, b) => b.timestamp - a.timestamp);
+        
         setEvidence(items);
       } catch (error) {
         console.error('Error fetching evidence:', error);
@@ -65,17 +68,23 @@ const EvidenceHistory = () => {
                 className="evidence-card glass-card"
                 onClick={() => setSelectedImage(item)}
               >
-                <div className="evidence-img-wrapper">
-                  <img src={item.imageUrl} alt={`Evidence ${item.filename}`} loading="lazy" />
+                <div className="evidence-img-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#251b3d' }}>
+                  {item.type === 'audio' ? (
+                     <div style={{ padding: '20px', textAlign: 'center', width: '100%' }}>
+                       <FiImage style={{ fontSize: '30px', opacity: 0.5, marginBottom: '10px' }} />
+                       <audio controls src={item.audioUrl} style={{ width: '100%', height: '30px' }} />
+                     </div>
+                  ) : (
+                    <img src={item.imageUrl} alt={`Evidence ${item.filename}`} loading="lazy" />
+                  )}
                 </div>
                 <div className="evidence-card-info">
                   <span className="evidence-time">
                     <FiClock /> {formatTimestamp(item.timestamp)}
                   </span>
                   <a
-                    href={item.imageUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={item.type === 'audio' ? item.audioUrl : item.imageUrl}
+                    download={`evidence_${item.timestamp}.${item.type === 'audio' ? 'webm' : 'jpg'}`}
                     className="btn btn-ghost btn-sm"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -91,7 +100,14 @@ const EvidenceHistory = () => {
         {selectedImage && (
           <div className="evidence-lightbox" onClick={() => setSelectedImage(null)}>
             <div className="evidence-lightbox-content" onClick={(e) => e.stopPropagation()}>
-              <img src={selectedImage.imageUrl} alt="Evidence full view" />
+              {selectedImage.type === 'audio' ? (
+                <div style={{ padding: '40px', background: '#1c1331', borderRadius: '10px', textAlign: 'center' }}>
+                  <h3 style={{ color: 'white', marginBottom: '20px' }}>Audio Evidence</h3>
+                  <audio controls src={selectedImage.audioUrl} style={{ width: '300px' }} autoPlay />
+                </div>
+              ) : (
+                <img src={selectedImage.imageUrl} alt="Evidence full view" />
+              )}
               <div className="evidence-lightbox-info">
                 <span><FiClock /> {formatTimestamp(selectedImage.timestamp)}</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setSelectedImage(null)}>

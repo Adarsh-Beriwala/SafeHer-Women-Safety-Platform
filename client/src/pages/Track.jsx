@@ -120,7 +120,7 @@ const Track = () => {
         ) : (
           <div className="track-loading">
             <div className="spinner"></div>
-            <p>{!isLoaded ? 'Loading map...' : 'Waiting for location data...'}</p>
+            <p>{!isLoaded ? 'Loading map API...' : 'Waiting for live location data...'}</p>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
-import { ref, set, onValue, remove } from 'firebase/database';
-import { rtdb } from './firebase';
+import { doc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
 
 let watchId = null;
 
@@ -7,13 +7,25 @@ export const generateSessionId = () => {
   return `sos_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-export const startTracking = (sessionId, onLocationUpdate) => {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
-      return;
-    }
+export const startTracking = async (sessionId, initialLocation, onLocationUpdate) => {
+  if (!navigator.geolocation) {
+    throw new Error('Geolocation not supported');
+  }
 
+  // Push the initial location immediately so the tracking link doesn't hang
+  if (initialLocation) {
+    try {
+      await setDoc(doc(db, 'tracking', sessionId), {
+        currentLocation: initialLocation,
+        active: true,
+        updatedAt: Date.now()
+      }, { merge: true });
+    } catch (err) {
+      console.error('Failed to push initial location:', err);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
     watchId = navigator.geolocation.watchPosition(
       async (position) => {
         const locationData = {
@@ -25,9 +37,13 @@ export const startTracking = (sessionId, onLocationUpdate) => {
           timestamp: Date.now(),
         };
 
-        // Push to Firebase Realtime DB
+        // Push to Firestore
         try {
-          await set(ref(rtdb, `tracking/${sessionId}/currentLocation`), locationData);
+          await setDoc(doc(db, 'tracking', sessionId), {
+            currentLocation: locationData,
+            active: true,
+            updatedAt: Date.now()
+          }, { merge: true });
         } catch (err) {
           console.error('Failed to push location:', err);
         }
@@ -59,7 +75,7 @@ export const stopTracking = async (sessionId) => {
 
   if (sessionId) {
     try {
-      await set(ref(rtdb, `tracking/${sessionId}/active`), false);
+      await updateDoc(doc(db, 'tracking', sessionId), { active: false });
     } catch (err) {
       console.error('Failed to update tracking status:', err);
     }
@@ -67,11 +83,13 @@ export const stopTracking = async (sessionId) => {
 };
 
 export const listenToTracking = (sessionId, callback) => {
-  const locationRef = ref(rtdb, `tracking/${sessionId}/currentLocation`);
-  return onValue(locationRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      callback(data);
+  const locationRef = doc(db, 'tracking', sessionId);
+  return onSnapshot(locationRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data().currentLocation;
+      if (data) {
+        callback(data);
+      }
     }
   });
 };

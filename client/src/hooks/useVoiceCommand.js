@@ -4,6 +4,12 @@ const useVoiceCommand = (triggerWord = 'help me', onTrigger) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef(null);
+  const onTriggerRef = useRef(onTrigger);
+
+  // Keep the latest onTrigger without re-running the main effect
+  useEffect(() => {
+    onTriggerRef.current = onTrigger;
+  }, [onTrigger]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -18,8 +24,8 @@ const useVoiceCommand = (triggerWord = 'help me', onTrigger) => {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript.toLowerCase().trim();
           if (transcript.includes(triggerWord.toLowerCase())) {
-            if (onTrigger) {
-              onTrigger();
+            if (onTriggerRef.current) {
+              onTriggerRef.current();
             }
           }
         }
@@ -61,7 +67,7 @@ const useVoiceCommand = (triggerWord = 'help me', onTrigger) => {
         recognitionRef.current = null;
       }
     };
-  }, [triggerWord, onTrigger]);
+  }, [triggerWord]);
 
   const startListening = useCallback(() => {
     if (recognitionRef.current) {

@@ -43,12 +43,7 @@ const features = [
     desc: 'Nearby volunteers are automatically alerted and dispatched to your location.',
     color: '#ec4899',
   },
-  {
-    icon: <FiCpu />,
-    title: 'AI Safety Score',
-    desc: 'ML-powered area safety ratings using XGBoost on real crime data to plan safer routes.',
-    color: '#06b6d4',
-  },
+
   {
     icon: <FiMessageCircle />,
     title: 'AI Safety Chatbot',
@@ -194,7 +189,7 @@ const Landing = () => {
               { name: 'Firebase', desc: 'Auth & Database' },
               { name: 'Google Maps', desc: 'Location & Maps' },
               { name: 'Google Gemini', desc: 'AI Chatbot' },
-              { name: 'XGBoost', desc: 'ML Safety Score' },
+              { name: 'Twilio API', desc: 'Real-time SMS' },
             ].map((tech, i) => (
               <div key={i} className="tech-card glass-card">
                 <FiCheck className="tech-check" />
@@ -238,7 +233,7 @@ const Landing = () => {
           <div className="footer-links">
             <h4>Features</h4>
             <a href="#features">SOS System</a>
-            <a href="#features">AI Safety Score</a>
+            <a href="#features">AI Safety Chatbot</a>
             <a href="#features">Volunteer Network</a>
           </div>
         </div>

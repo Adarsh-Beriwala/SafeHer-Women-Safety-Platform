@@ -39,3 +39,5 @@ firebase-debug.log
 # Logs
 *.log
 npm-debug.log*
+
+# Deployment configuration complete

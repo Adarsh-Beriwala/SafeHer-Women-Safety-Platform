@@ -534,3 +534,12 @@ ul, ol {
     font-size: 0.9rem;
   }
 }
+
+/* ===== LEAFLET FIX ===== */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 350px;
+  background: var(--bg-primary) !important;
+}
+

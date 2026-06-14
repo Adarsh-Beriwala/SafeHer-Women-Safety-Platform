@@ -24,7 +24,10 @@ try {
   app = admin.initializeApp();
 }
 
-const adminDb = admin.firestore();
-const adminAuth = admin.auth();
+const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
+
+const adminDb = getFirestore();
+const adminAuth = getAuth();
 
 module.exports = { admin, adminDb, adminAuth };

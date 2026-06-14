@@ -70,9 +70,9 @@ const Dashboard = () => {
       // 2. Generate tracking session
       const newSessionId = generateSessionId();
       setSessionId(newSessionId);
-      const link = getTrackingLink(newSessionId);
+      const link = location ? `https://maps.google.com/?q=${location.lat},${location.lng}` : getTrackingLink(newSessionId);
       setTrackingLink(link);
-      addLog('🔗 Tracking link generated');
+      addLog('🔗 Google Maps link generated');
 
       // 3. Start live tracking (push immediate location)
       startTracking(newSessionId, location, (loc) => {
@@ -90,8 +90,9 @@ const Dashboard = () => {
         addLog('⚠️ Camera not available');
       }
 
-      // 5. Send alerts
+      // 5. Send alerts (In-App & Twilio SMS)
       if (userProfile?.emergencyContacts?.length > 0) {
+        // Send In-App Alerts
         const results = await sendSOSAlert(
           userProfile.emergencyContacts,
           { name: userProfile.name, phone: userProfile.phone },
@@ -99,8 +100,35 @@ const Dashboard = () => {
           link
         );
         const sentCount = results.filter((r) => r.status === 'sent').length;
-        addLog(`📧 Alerts sent to ${sentCount} contact(s)`);
-        toast.success(`📧 Alerts sent to ${sentCount} contact(s)`);
+        
+        // Trigger Twilio SMS to the first emergency contact (for demo video)
+        try {
+          const firstContactPhone = userProfile.emergencyContacts[0].phone;
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          
+          fetch(`${apiUrl}/api/sos/sms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userName: userProfile.name,
+              trackingLink: link,
+              userPhone: userProfile.phone,
+              toPhone: firstContactPhone
+            })
+          }).then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                addLog('📱 SMS successfully dispatched via Twilio');
+                toast.success('Real SMS sent to emergency contact!');
+              } else {
+                addLog('⚠️ Twilio SMS failed: ' + data.error);
+              }
+            }).catch(e => console.error('Twilio fetch error:', e));
+        } catch (smsErr) {
+          console.error("SMS Error:", smsErr);
+        }
+
+        addLog(`📧 In-App Alerts sent to ${sentCount} contact(s)`);
       } else {
         addLog('⚠️ No emergency contacts configured');
         toast.error('No emergency contacts! Add them in Profile.');

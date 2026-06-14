@@ -95,6 +95,39 @@ router.post('/resolve', async (req, res) => {
 });
 
 /**
+ * POST /api/sos/sms
+ * Send SMS using Twilio (For Demo/Video purposes)
+ */
+router.post('/sms', async (req, res) => {
+  try {
+    const { userName, trackingLink, userPhone, toPhone } = req.body;
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!accountSid || !authToken || !twilioPhone) {
+      return res.status(400).json({ error: 'Twilio credentials not configured in server/.env' });
+    }
+
+    const client = require('twilio')(accountSid, authToken);
+
+    const messageBody = `🚨 URGENT: SOS Alert from ${userName || 'SafeHer User'}. They need immediate help! Track live location: ${trackingLink || 'N/A'}`;
+
+    const message = await client.messages.create({
+      body: messageBody,
+      from: twilioPhone,
+      to: toPhone || process.env.TWILIO_VERIFIED_PHONE // Fallback to verified phone for free trials
+    });
+
+    res.json({ success: true, messageId: message.sid });
+  } catch (error) {
+    console.error('Twilio SMS error:', error);
+    res.status(500).json({ error: 'Failed to send SMS via Twilio', details: error.message });
+  }
+});
+
+/**
  * GET /api/sos/history/:userId
  * Get SOS event history for a user
  */

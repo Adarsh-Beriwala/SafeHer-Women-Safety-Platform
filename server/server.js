@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 5001;
 
 // ============ MIDDLEWARE ============
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true, // Allow any origin to fix local network errors
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

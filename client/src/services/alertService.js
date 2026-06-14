@@ -56,6 +56,7 @@ export const sendVolunteerAlert = async (volunteerEmail, volunteerName, victimDa
     const templateParams = {
       to_name: volunteerName,
       to_email: volunteerEmail,
+      email: volunteerEmail, // Required if the template uses {{email}}
       from_name: 'SafeHer Emergency System',
       user_name: victimData.name,
       message: `🆘 VOLUNTEER ALERT 🆘\n\nA nearby user "${victimData.name}" has triggered an emergency SOS!\n\nTime: ${timestamp}\n\nLive Tracking: ${trackingLink}\n\nPlease proceed to help if you can do so safely.`,

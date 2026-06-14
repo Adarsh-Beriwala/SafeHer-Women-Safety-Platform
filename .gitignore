@@ -12,13 +12,8 @@ server/node_modules/
 client/dist/
 build/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-ml-backend/models/*.pkl
-venv/
-.venv/
+client/.env
+server/.env
 
 # IDE
 .vscode/
@@ -30,22 +25,16 @@ venv/
 .DS_Store
 Thumbs.db
 
+# Environments
+venv/
+server/venv/
+client/venv/
+.venv/
+
 # Firebase
 .firebase/
 firebase-debug.log
 
-# PDFs
-*.pdf
-
-# Interview Prep
-Interview_Prep.md
-FAANG_Interview_Questions.md
-SafeHer_Master_Guide.md
-SafeHer_Interview_Cracker.md
-End_to_End_Workflow.md
-FAANG_System_Design_Workflow.md
-Project_Presentation_Script.md
-Deep_Technical_Architecture.md
 
 # Logs
 *.log

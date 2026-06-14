@@ -101,31 +101,41 @@ const Dashboard = () => {
         );
         const sentCount = results.filter((r) => r.status === 'sent').length;
         
-        // Trigger Twilio SMS to the first emergency contact (for demo video)
+        // Trigger Twilio SMS to all emergency contacts
         try {
-          const firstContactPhone = userProfile.emergencyContacts[0].phone;
           const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
           
-          fetch(`${apiUrl}/api/sos/sms`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userName: userProfile.name,
-              trackingLink: link,
-              userPhone: userProfile.phone,
-              toPhone: firstContactPhone
-            })
-          }).then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                addLog('📱 SMS successfully dispatched via Twilio');
-                toast.success('Real SMS sent to emergency contact!');
-              } else {
-                addLog('⚠️ Twilio SMS failed: ' + data.error);
-              }
-            }).catch(e => console.error('Twilio fetch error:', e));
+          for (const contact of userProfile.emergencyContacts) {
+            if (!contact.phone) continue;
+            
+            addLog(`🔄 Attempting to send Twilio SMS to ${contact.name || 'Contact'}...`);
+            
+            fetch(`${apiUrl}/api/sos/sms`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userName: userProfile.name,
+                trackingLink: link,
+                userPhone: userProfile.phone,
+                toPhone: contact.phone
+              })
+            }).then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  addLog(`📱 SMS successfully dispatched to ${contact.name}`);
+                  toast.success(`Real SMS sent to ${contact.name}!`);
+                } else {
+                  addLog(`⚠️ Twilio SMS failed for ${contact.name}`);
+                  console.error("Twilio Data Error:", data);
+                }
+              }).catch(e => {
+                addLog(`⚠️ Twilio network error for ${contact.name}`);
+                console.error('Twilio fetch network error:', e);
+              });
+          }
         } catch (smsErr) {
-          console.error("SMS Error:", smsErr);
+          addLog('⚠️ Twilio block crashed');
+          console.error("SMS Block Error:", smsErr);
         }
 
         addLog(`📧 In-App Alerts sent to ${sentCount} contact(s)`);

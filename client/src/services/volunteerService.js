@@ -77,23 +77,47 @@ export const alertNearbyVolunteers = async (userLocation, victimData, trackingLi
   for (const volunteer of volunteers) {
     // We need volunteer email - get from users collection
     try {
-      const userDoc = await getDocs(
-        query(collection(db, 'users'), where('__name__', '==', volunteer.userId))
-      );
+      const { doc, getDoc } = await import('firebase/firestore');
+      const userRef = doc(db, 'users', volunteer.userId);
+      const userSnap = await getDoc(userRef);
       
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
         const result = await sendVolunteerAlert(
-          userData.email,
+          userData.email || '',
           volunteer.name,
           victimData,
           trackingLink
         );
+
+        // Also send Twilio SMS to the volunteer if they have a phone number
+        if (userData.phone) {
+          try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await fetch(`${apiUrl}/api/sos/sms`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userName: victimData.name,
+                trackingLink: trackingLink,
+                userPhone: victimData.phone,
+                toPhone: userData.phone
+              })
+            });
+            console.log(`Twilio SMS sent to volunteer ${volunteer.name}`);
+          } catch (smsErr) {
+            console.error(`Failed to send SMS to volunteer ${volunteer.name}:`, smsErr);
+          }
+        }
+
         results.push({ volunteer: volunteer.name, distance: volunteer.distance, ...result });
+      } else {
+        console.warn('Volunteer user doc not found:', volunteer.userId);
+        results.push({ volunteer: volunteer.name, distance: volunteer.distance, status: 'failed' });
       }
     } catch (err) {
       console.error(`Failed to alert volunteer ${volunteer.name}:`, err);
-      results.push({ volunteer: volunteer.name, status: 'failed' });
+      results.push({ volunteer: volunteer.name, distance: volunteer.distance, status: 'failed' });
     }
   }
 

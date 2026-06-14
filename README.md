@@ -30,7 +30,7 @@ SafeHer is not just a standard web app; it's a demonstration of integrating **Br
 | :--- | :--- | :--- |
 | **One-Tap SOS** | Instantly fires the emergency sequence across all systems. | React State Management & Firestore `setDoc` |
 | **Voice Activation** | Hands-free trigger by saying **"Help Me"**. | HTML5 `SpeechRecognition` Web API |
-| **Twilio SMS Alerts** | Sends emergency SMS with a Native Google Maps URL. | Node.js Twilio SDK integration |
+| **Twilio SMS & EmailJS** | Sends emergency SMS and Emails with Native Google Maps URLs to all contacts. | Node.js Twilio SDK & EmailJS API |
 
 <br />
 
@@ -124,6 +124,9 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender
 VITE_FIREBASE_APP_ID=your_app_id
 VITE_GEMINI_API_KEY=your_gemini_key
 VITE_API_URL=http://localhost:5001
+VITE_EMAILJS_SERVICE_ID=your_emailjs_service_id
+VITE_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
+VITE_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
 ```
 
 **`server/.env`**
